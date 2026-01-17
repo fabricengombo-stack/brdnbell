@@ -1,65 +1,89 @@
-import Image from "next/image";
+"use client";
+
+import { useRef, useState } from "react";
 
 export default function Home() {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [wantsAudio, setWantsAudio] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="flex min-h-screen items-center justify-center bg-black p-8">
+      <div
+        className="relative h-[1080px] w-[1920px] transition-transform duration-300"
+        style={{
+          transform: `perspective(1400px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`,
+        }}
+      >
+        <video
+          className="h-full w-full object-contain"
+          src="/ipodvid.mp4"
+          muted={!wantsAudio || !isHovering}
+          playsInline
+          preload="metadata"
+          ref={videoRef}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <div
+          className="absolute left-1/2 top-0 h-full w-[70%] -translate-x-1/2"
+          onMouseEnter={() => {
+            const video = videoRef.current;
+            if (!video) return;
+            setIsHovering(true);
+            video.muted = !wantsAudio;
+            video.play();
+          }}
+          onMouseLeave={() => {
+            const video = videoRef.current;
+            if (!video) return;
+            setIsHovering(false);
+            video.pause();
+            video.currentTime = 0;
+            video.muted = true;
+            setTilt({ x: 0, y: 0 });
+          }}
+          onMouseMove={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            const x = (event.clientX - rect.left) / rect.width;
+            const y = (event.clientY - rect.top) / rect.height;
+            const rotateX = (0.5 - y) * 4;
+            const rotateY = (x - 0.5) * 6;
+            setTilt({ x: rotateY, y: rotateX });
+          }}
+        />
+        <button
+          className="absolute right-4 top-4 rounded-full border border-white/40 bg-black/60 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+          onClick={(event) => {
+            event.stopPropagation();
+            const video = videoRef.current;
+            const nextWantsAudio = !wantsAudio;
+            setWantsAudio(nextWantsAudio);
+            if (video && isHovering) video.muted = !nextWantsAudio;
+          }}
+          type="button"
+        >
+          {wantsAudio ? "Mute" : "Unmute"}
+        </button>
+        <div className="pointer-events-none absolute left-1/2 top-6 flex -translate-x-1/2 items-center gap-3 text-white/80">
+          <span className="text-[11px] uppercase tracking-[0.25em]">
+            Move your mouse
+          </span>
+          <svg
+            aria-hidden="true"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 20 20"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <path
+              d="M10 4v12M6 12l4 4 4-4"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.5"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </svg>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
